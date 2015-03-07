@@ -30,6 +30,7 @@ public class MainActivity extends ActionBarActivity
      * Fragment managing the behaviors, interactions and presentation of the navigation drawer.
      */
     private NavigationDrawerFragment mNavigationDrawerFragment;
+    private NavigationDrawerFragment mNavigationDrawerFragmentRight;
 
     /**
      * Used to store the last screen title. For use in {@link #restoreActionBar()}.
@@ -60,11 +61,19 @@ public class MainActivity extends ActionBarActivity
 
         mNavigationDrawerFragment = (NavigationDrawerFragment)
                 getSupportFragmentManager().findFragmentById(R.id.navigation_drawer);
+
+        mNavigationDrawerFragmentRight = (NavigationDrawerFragment)
+                getSupportFragmentManager().findFragmentById(R.id.navigation_drawer_right);
+
         mTitle = getTitle();
 
         // Set up the drawer.
         mNavigationDrawerFragment.setUp(
                 R.id.navigation_drawer,
+                (DrawerLayout) findViewById(R.id.drawer_layout));
+
+        mNavigationDrawerFragmentRight.setUp(
+                R.id.navigation_drawer_right,
                 (DrawerLayout) findViewById(R.id.drawer_layout));
 
         ViewPagerAdapter adapter =  new ViewPagerAdapter(getSupportFragmentManager(),Titles,Numboftabs);

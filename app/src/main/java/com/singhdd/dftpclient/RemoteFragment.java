@@ -1,16 +1,29 @@
 package com.singhdd.dftpclient;
 
 import android.app.Activity;
+import android.app.Service;
+import android.content.ComponentName;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.os.RemoteException;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
+
+import com.singhdd.dftpclient.common.FTPHelper;
 
 /**
  * A placeholder fragment containing a simple view.
  */
 public class RemoteFragment extends Fragment {
+
+
+
     /**
      * The fragment argument representing the section number for this
      * fragment.
@@ -36,8 +49,23 @@ public class RemoteFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_remote, container, false);
+
+        MainActivity mAct = (MainActivity) getActivity();
+
+      //  FTPHelper mFTPHelper = new FTPHelper(getActivity());
+       // boolean connected = mFTPHelper.ftpConnect("server.vigaas.com", "admin", "ER.dds1ngh", 21);
+      //  initConnection();
+        /*try {
+            boolean connected = mAct.mIFTPInterface.connectFTP("server.vigaas.com", "admin", "ER.dds1ngh", 21);
+            Log.d("FTPConnection",""+connected);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }*/
         return rootView;
     }
+
+
+
 
 //    @Override
 //    public void onAttach(Activity activity) {

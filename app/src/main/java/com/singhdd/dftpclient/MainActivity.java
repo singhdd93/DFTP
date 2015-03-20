@@ -1,6 +1,12 @@
 package com.singhdd.dftpclient;
 
+import android.app.Service;
+import android.content.ComponentName;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.os.RemoteException;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
@@ -25,6 +31,9 @@ import java.io.Serializable;
 
 public class MainActivity extends ActionBarActivity
         implements NavigationDrawerFragment.NavigationDrawerCallbacks {
+
+    private ServiceConnection FTPServiceConnection;
+    public FTPInterface mIFTPInterface;
 
     /**
      * Fragment managing the behaviors, interactions and presentation of the navigation drawer.
@@ -58,6 +67,8 @@ public class MainActivity extends ActionBarActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        initConnection();
 
         mNavigationDrawerFragment = (NavigationDrawerFragment)
                 getSupportFragmentManager().findFragmentById(R.id.navigation_drawer);
@@ -97,6 +108,13 @@ public class MainActivity extends ActionBarActivity
                 .replace(R.id.container, RemoteFragment.newInstance(position + 1))
                 .commit();*/
         Toast.makeText(MainActivity.this,"Selected Position = "+(position+1), Toast.LENGTH_SHORT).show();
+        if(position == 0) {
+            try {
+                mIFTPInterface.connectFTP("server", "admin", "password", 21);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public void onSectionAttached(int number) {
@@ -148,72 +166,39 @@ public class MainActivity extends ActionBarActivity
         return super.onOptionsItemSelected(item);
     }
 
+    void initConnection() {
+        FTPServiceConnection = new ServiceConnection() {
 
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+                // TODO Auto-generated method stub
+                mIFTPInterface = null;
+                Toast.makeText(getApplicationContext(), "Service Disconnected",
+                        Toast.LENGTH_SHORT).show();
+                Log.d("FTPRemote", "Binding - Service disconnected");
+            }
 
-    /*class SamplePagerAdapter extends PagerAdapter {
-
-        *//**
-         * @return the number of pages to display
-         *//*
-        @Override
-        public int getCount() {
-            return 10;
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                // TODO Auto-generated method stub
+                mIFTPInterface = FTPInterface.Stub.asInterface((IBinder) service);
+                Toast.makeText(getApplicationContext(),
+                        "Addition Service Connected", Toast.LENGTH_SHORT)
+                        .show();
+                Log.d("FTPRemote", "Binding is done - Service connected");
+            }
+        };
+        if (mIFTPInterface == null) {
+            Intent it = new Intent();
+            it.setAction("service.FTP");
+            // binding to remote service
+            bindService(it, FTPServiceConnection, Service.BIND_AUTO_CREATE);
         }
+    }
 
-        *//**
-         * @return true if the value returned from {@link #instantiateItem(ViewGroup, int)} is the
-         * same object as the {@link View} added to the {@link ViewPager}.
-         *//*
-        @Override
-        public boolean isViewFromObject(View view, Object o) {
-            return o == view;
-        }
 
-        *//**
-         * Return the title of the item at {@code position}. This is important as what this method
-         * returns is what is displayed in the {@link SlidingTabLayout}.
-         * <p>
-         * Here we construct one using the position value, but for real application the title should
-         * refer to the item's contents.
-         *//*
-        @Override
-        public CharSequence getPageTitle(int position) {
-            return "Item " + (position + 1);
-        }
 
-        *//**
-         * Instantiate the {@link View} which should be displayed at {@code position}. Here we
-         * inflate a layout from the apps resources and then change the text view to signify the position.
-         *//*
-        @Override
-        public Object instantiateItem(ViewGroup container, int position) {
-            // Inflate a new layout from our resources
-            View view = getLayoutInflater().inflate(R.layout.pager_item,
-                    container, false);
-            // Add the newly created View to the ViewPager
-            container.addView(view);
 
-            // Retrieve a TextView from the inflated View, and update it's text
-            TextView title = (TextView) view.findViewById(R.id.item_title);
-            title.setText(String.valueOf(position + 1));
-
-            Log.i(LOG_TAG, "instantiateItem() [position: " + position + "]");
-
-            // Return the View
-            return view;
-        }
-
-        *//**
-         * Destroy the item from the {@link ViewPager}. In our case this is simply removing the
-         * {@link View}.
-         *//*
-        @Override
-        public void destroyItem(ViewGroup container, int position, Object object) {
-            container.removeView((View) object);
-            Log.i(LOG_TAG, "destroyItem() [position: " + position + "]");
-        }
-
-    }*/
 
     class ViewPagerAdapter extends FragmentStatePagerAdapter {
 

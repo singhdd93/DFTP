@@ -32,7 +32,10 @@ public class FTPHelper{
 
         try {
             String[] a = mFTPClient.connect(host, port);
-            Log.v(TAG,a[0]);
+            Log.d("LENGTH",""+a.length);
+            for(int i = 0; i<a.length; i++) {
+                Log.w(TAG, a[i]);
+            }
             mFTPClient.login(username, password);
             mFTPClient.setType(FTPClient.TYPE_BINARY);
             mFTPClient.setPassive(true);
@@ -48,6 +51,56 @@ public class FTPHelper{
             return false;
         }
 
+    }
+
+    public boolean ftpDisconnect() {
+        try {
+            mFTPClient.logout();
+            mFTPClient.disconnect(true);
+            return true;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        } catch (FTPIllegalReplyException e) {
+            e.printStackTrace();
+            return false;
+        } catch (FTPException e) {
+            e.printStackTrace();
+            return false;
+        }
+
+    }
+
+    public String getFTPCurrentDirectory() {
+        try {
+            String curDir = mFTPClient.currentDirectory();
+            return curDir;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        } catch (FTPIllegalReplyException e) {
+            e.printStackTrace();
+            return null;
+        } catch (FTPException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public boolean changeFTPDirectory(String path) {
+        try {
+            mFTPClient.changeDirectory(path);
+            return true;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        } catch (FTPIllegalReplyException e) {
+            e.printStackTrace();
+            return false;
+        } catch (FTPException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
 }

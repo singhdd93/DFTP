@@ -21,13 +21,6 @@
             </intent-filter>
         </activity>
 
-        <service
-            android:name=".service.FTPService"
-            android:process=":ftpservice">
-            <intent-filter>
-                <action android:name="service.FTP"/>
-            </intent-filter>
-        </service>
     </application>
 
 </manifest>

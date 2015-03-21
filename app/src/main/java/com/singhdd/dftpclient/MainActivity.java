@@ -28,18 +28,20 @@ import com.singhdd.dftpclient.common.view.SlidingTabLayout;
 
 import java.io.Serializable;
 
+import static com.singhdd.dftpclient.RemoteFragment.*;
+
 
 public class MainActivity extends ActionBarActivity
         implements NavigationDrawerFragment.NavigationDrawerCallbacks {
 
-    private ServiceConnection FTPServiceConnection;
-    public FTPInterface mIFTPInterface;
 
     /**
      * Fragment managing the behaviors, interactions and presentation of the navigation drawer.
      */
     private NavigationDrawerFragment mNavigationDrawerFragment;
     private NavigationDrawerFragment mNavigationDrawerFragmentRight;
+
+    RemoteFragment tab1;
 
     /**
      * Used to store the last screen title. For use in {@link #restoreActionBar()}.
@@ -67,8 +69,6 @@ public class MainActivity extends ActionBarActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        initConnection();
 
         mNavigationDrawerFragment = (NavigationDrawerFragment)
                 getSupportFragmentManager().findFragmentById(R.id.navigation_drawer);
@@ -108,13 +108,13 @@ public class MainActivity extends ActionBarActivity
                 .replace(R.id.container, RemoteFragment.newInstance(position + 1))
                 .commit();*/
         Toast.makeText(MainActivity.this,"Selected Position = "+(position+1), Toast.LENGTH_SHORT).show();
-        if(position == 0) {
-            try {
-                mIFTPInterface.connectFTP("server", "admin", "password", 21);
-            } catch (RemoteException e) {
-                e.printStackTrace();
+
+        if(tab1 != null) {
+            if(position == 0) {
+               tab1.connectFTP("server.vigaas.com", "admin", "ER.dds1ng", "21");
             }
         }
+
     }
 
     public void onSectionAttached(int number) {
@@ -166,39 +166,6 @@ public class MainActivity extends ActionBarActivity
         return super.onOptionsItemSelected(item);
     }
 
-    void initConnection() {
-        FTPServiceConnection = new ServiceConnection() {
-
-            @Override
-            public void onServiceDisconnected(ComponentName name) {
-                // TODO Auto-generated method stub
-                mIFTPInterface = null;
-                Toast.makeText(getApplicationContext(), "Service Disconnected",
-                        Toast.LENGTH_SHORT).show();
-                Log.d("FTPRemote", "Binding - Service disconnected");
-            }
-
-            @Override
-            public void onServiceConnected(ComponentName name, IBinder service) {
-                // TODO Auto-generated method stub
-                mIFTPInterface = FTPInterface.Stub.asInterface((IBinder) service);
-                Toast.makeText(getApplicationContext(),
-                        "Addition Service Connected", Toast.LENGTH_SHORT)
-                        .show();
-                Log.d("FTPRemote", "Binding is done - Service connected");
-            }
-        };
-        if (mIFTPInterface == null) {
-            Intent it = new Intent();
-            it.setAction("service.FTP");
-            // binding to remote service
-            bindService(it, FTPServiceConnection, Service.BIND_AUTO_CREATE);
-        }
-    }
-
-
-
-
 
     class ViewPagerAdapter extends FragmentStatePagerAdapter {
 
@@ -221,7 +188,7 @@ public class MainActivity extends ActionBarActivity
 
             if(position == 0) // if the position is 0 we are returning the First tab
             {
-                RemoteFragment tab1 = new RemoteFragment();
+                tab1 = new RemoteFragment();
                 return tab1;
             }
             else             // As we are having 2 tabs if the position is now 0 it must be 1 so we are returning second tab

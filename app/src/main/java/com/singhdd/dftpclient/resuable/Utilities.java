@@ -95,7 +95,7 @@ public class Utilities {
     }
 
 
-    private static int getFileType(String path) {
+    public static int getFileType(String path) {
         String ext = MimeTypeMap.getFileExtensionFromUrl(path.toLowerCase());
         String mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext);
         if(mime != null) {

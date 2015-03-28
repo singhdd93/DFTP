@@ -21,12 +21,16 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="20dp"
-        android:paddingBottom="20dp"
-        >
+        android:orientation="vertical">
         <Button
-            android:layout_width="match_parent"
+            android:paddingLeft="15dp"
+            android:id="@+id/button_add_server"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Add Server"/>
+            android:text="Add Server"
+            android:drawableLeft="@drawable/ic_plus"
+            android:drawablePadding="25dp"
+            android:textAppearance="?android:textAppearanceMedium"
+            style="@style/Widget.AppCompat.Toolbar.Button.Navigation"/>
         </LinearLayout>
 </LinearLayout>

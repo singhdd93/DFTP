@@ -39,5 +39,42 @@ public class Globals {
     public static int ICON_PARENT = R.drawable.ic_circle_parent_dir;
 
 
+    /*
+    * Server Activity Intent Actions
+    */
+    public static String ACTION_NEW_SERVER = "newserver";
+    public static String ACTION_EDIT_SERVER = "editserver";
+
+
+    /*
+    * Server Activity Intent Data
+    */
+    public static String SERVER_NAME = "name";
+    public static String SERVER_HOST = "host";
+    public static String SERVER_USERNAME = "uname";
+    public static String SERVER_PASSWORD = "pass";
+    public static String SERVER_PORT = "port";
+    public static String SERVER_ID = "id";
+
+
+    /*
+    * Passing Data to Intent Service
+    */
+
+    public static String FTPCLIENT = "mftpcl";
+    public static String ORIGIN_PATH = "originpath";
+    public static String DEST_PATH = "destpath";
+    public static String RESULT_RECEIVER = "rr";
+
+
+    /*
+    * Result Receiver
+    */
+
+    public static final int RR_CODE_DOWNLOAD = 8456;
+    public static final int RR_CODE_UPLOAD = 8457;
+    public static final String PROGRESS = "progress";
+
+
 
 }

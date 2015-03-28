@@ -1,17 +1,11 @@
 package com.singhdd.dftpclient;
 
-import android.app.Service;
-import android.content.ComponentName;
-import android.content.Intent;
-import android.content.ServiceConnection;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.os.Bundle;
-import android.os.IBinder;
-import android.os.RemoteException;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.app.FragmentStatePagerAdapter;
-import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
@@ -20,15 +14,10 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import com.singhdd.dftpclient.common.view.SlidingTabLayout;
-
-import java.io.Serializable;
-
-import static com.singhdd.dftpclient.RemoteFragment.*;
 
 
 public class MainActivity extends ActionBarActivity
@@ -39,14 +28,10 @@ public class MainActivity extends ActionBarActivity
      * Fragment managing the behaviors, interactions and presentation of the navigation drawer.
      */
     private NavigationDrawerFragment mNavigationDrawerFragment;
-    private NavigationDrawerFragment mNavigationDrawerFragmentRight;
 
     RemoteFragment tab1;
+    LocalFragment tab2;
 
-    /**
-     * Used to store the last screen title. For use in {@link #restoreActionBar()}.
-     */
-    private CharSequence mTitle;
 
     /**
      * A custom {@link ViewPager} title strip which looks much like Tabs present in Android v4.0 and
@@ -73,68 +58,109 @@ public class MainActivity extends ActionBarActivity
         mNavigationDrawerFragment = (NavigationDrawerFragment)
                 getSupportFragmentManager().findFragmentById(R.id.navigation_drawer);
 
-        mNavigationDrawerFragmentRight = (NavigationDrawerFragment)
-                getSupportFragmentManager().findFragmentById(R.id.navigation_drawer_right);
 
-        mTitle = getTitle();
+
 
         // Set up the drawer.
         mNavigationDrawerFragment.setUp(
                 R.id.navigation_drawer,
                 (DrawerLayout) findViewById(R.id.drawer_layout));
 
-        mNavigationDrawerFragmentRight.setUp(
-                R.id.navigation_drawer_right,
-                (DrawerLayout) findViewById(R.id.drawer_layout));
 
         ViewPagerAdapter adapter =  new ViewPagerAdapter(getSupportFragmentManager(),Titles,Numboftabs);
 
-        // Get the ViewPager and set it's PagerAdapter so that it can display items
-        mViewPager = (ViewPager) findViewById(R.id.viewpager);
-        mViewPager.setAdapter(adapter);
 
-        // Give the SlidingTabLayout the ViewPager, this must be done AFTER the ViewPager has had
-        // it's PagerAdapter set.
-        mSlidingTabLayout = (SlidingTabLayout) findViewById(R.id.sliding_tabs);
-        mSlidingTabLayout.setViewPager(mViewPager);
 
-    }
 
-    @Override
-    public void onNavigationDrawerItemSelected(int position) {
-        // update the main content by replacing fragments
-        /*FragmentManager fragmentManager = getSupportFragmentManager();
-        fragmentManager.beginTransaction()
-                .replace(R.id.container, RemoteFragment.newInstance(position + 1))
-                .commit();*/
-        Toast.makeText(MainActivity.this,"Selected Position = "+(position+1), Toast.LENGTH_SHORT).show();
+        if(findViewById(R.id.sliding_tabs) != null) {
 
-        if(tab1 != null) {
-            if(position == 0) {
-               tab1.connectFTP("server.vigaas.com", "admin", "ER.dds1ng", "21");
+            // Get the ViewPager and set it's PagerAdapter so that it can display items
+            mViewPager = (ViewPager) findViewById(R.id.viewpager);
+            mViewPager.setAdapter(adapter);
+
+
+            // Give the SlidingTabLayout the ViewPager, this must be done AFTER the ViewPager has had
+            // it's PagerAdapter set.
+            mSlidingTabLayout = (SlidingTabLayout) findViewById(R.id.sliding_tabs);
+            mSlidingTabLayout.setViewPager(mViewPager);
+
+        }
+        else {
+            if(savedInstanceState == null) {
+                tab1 = new RemoteFragment();
+                tab2 = new LocalFragment();
+
+                getSupportFragmentManager().beginTransaction().replace(R.id.container_remote, tab1,"f1").commit();
+                getSupportFragmentManager().beginTransaction().replace(R.id.container_local, tab2,"f2").commit();
+            }
+            else
+            {
+                tab1 = (RemoteFragment) getSupportFragmentManager().findFragmentByTag("f1");
+                tab2 = (LocalFragment) getSupportFragmentManager().findFragmentByTag("f2");
             }
         }
 
     }
 
-    public void onSectionAttached(int number) {
-        switch (number) {
-            case 1:
-                mTitle = getString(R.string.title_section1);
-                break;
-            case 2:
-                mTitle = getString(R.string.title_section2);
-                break;
-            case 3:
-                mTitle = getString(R.string.title_section3);
-                break;
-        }
+    public boolean drawerVisible() {
+        Log.d("MENU",""+mNavigationDrawerFragment.isMenuVisible());
+        Log.d("MENU2",""+mNavigationDrawerFragment.isVisible());
+        return mNavigationDrawerFragment.isMenuVisible();
     }
 
-    public void restoreActionBar() {
-        ActionBar actionBar = getSupportActionBar();
-        actionBar.setDisplayShowTitleEnabled(true);
-        actionBar.setTitle(mTitle);
+    public void showDrawer(){
+        mNavigationDrawerFragment.setMenuVisibility(true);
+    }
+
+
+    @Override
+    public void onNavigationDrawerItemSelected(final String host, final String uName, String password, final String port) {
+        // update the main content by replacing fragments
+        /*FragmentManager fragmentManager = getSupportFragmentManager();
+        fragmentManager.beginTransaction()
+                .replace(R.id.container, RemoteFragment.newInstance(position + 1))
+                .commit();*/
+        //Toast.makeText(MainActivity.this,"Selected Position = "+(position+1), Toast.LENGTH_SHORT).show();
+
+        if(password == null){
+            AlertDialog.Builder passwordAlert = new AlertDialog.Builder(this);
+            passwordAlert.setTitle("Password");
+            passwordAlert.setMessage("Enter the Password & Press OK");
+
+            final View v = getLayoutInflater().inflate(R.layout.popup_password,null);
+
+            final EditText passInput = (EditText) v.findViewById(R.id.popup_pass_input);
+
+            passwordAlert.setView(v);
+
+            passwordAlert.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    String pass = passInput.getText().toString();
+
+                    if (tab1 != null) {
+                        tab1.connectFTP(host, uName, pass, port);
+                    }
+                }
+            });
+
+            passwordAlert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    Toast.makeText(getBaseContext(), "Login Cancelled", Toast.LENGTH_SHORT).show();
+                }
+            });
+
+            passwordAlert.show();
+        }else {
+
+            if (tab1 != null) {
+
+                tab1.connectFTP(host, uName, password, port);
+
+            }
+        }
+
     }
 
 
@@ -193,7 +219,7 @@ public class MainActivity extends ActionBarActivity
             }
             else             // As we are having 2 tabs if the position is now 0 it must be 1 so we are returning second tab
             {
-                LocalFragment tab2 = new LocalFragment();
+                tab2 = new LocalFragment();
                 return tab2;
             }
 
@@ -214,5 +240,16 @@ public class MainActivity extends ActionBarActivity
             return NumbOfTabs;
         }
     }
+
+
+    public void reloadLocalFiles(){
+        tab2.reloadFiles();
+    }
+
+    public void reloadFTPFiles(){
+        tab1.reloadFiles();
+    }
+
+
 
 }

@@ -15,4 +15,8 @@
     <string name="hello_local_fragment">Hello Local fragment</string>
 
     <string name="font_family">sans-serif</string>
+    <string name="title_activity_server">FTPServer</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="title_activity_file_select">FileSelectActivity</string>
 </resources>

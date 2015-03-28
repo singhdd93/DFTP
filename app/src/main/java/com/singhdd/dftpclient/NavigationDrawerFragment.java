@@ -1,16 +1,23 @@
 package com.singhdd.dftpclient;
 
-import android.support.v7.app.ActionBarActivity;
 import android.app.Activity;
-import android.support.v7.app.ActionBar;
-import android.support.v4.app.Fragment;
-import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -18,17 +25,22 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.LinearLayout;
+import android.widget.Button;
 import android.widget.ListView;
+import android.widget.PopupMenu;
 import android.widget.Toast;
+
+import com.singhdd.dftpclient.adapters.ServerAdapter;
+import com.singhdd.dftpclient.common.FTPServerEntry;
+import com.singhdd.dftpclient.common.ServerDbHelper;
+import com.singhdd.dftpclient.resuable.Globals;
 
 /**
  * Fragment used for managing interactions for and presentation of a navigation drawer.
  * See the <a href="https://developer.android.com/design/patterns/navigation-drawer.html#Interaction">
  * design guidelines</a> for a complete explanation of the behaviors implemented here.
  */
-public class NavigationDrawerFragment extends Fragment {
+public class NavigationDrawerFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
     /**
      * Remember the position of the selected item.
@@ -59,6 +71,17 @@ public class NavigationDrawerFragment extends Fragment {
     private boolean mFromSavedInstanceState;
     private boolean mUserLearnedDrawer;
 
+    private SQLiteDatabase db;
+    private ServerDbHelper dbHelper;
+
+    private ServerAdapter mServerAdapter;
+
+    private static  final int SERVER_LOADER = 0;
+
+    private String[] projection = new String[]{FTPServerEntry._ID,FTPServerEntry.COLUMN_NAME,FTPServerEntry.COLUMN_USERNAME,FTPServerEntry.COLUMN_HOST, FTPServerEntry.COLUMN_PASSWORD, FTPServerEntry.COLUMN_PORT};
+
+
+
     public NavigationDrawerFragment() {
     }
 
@@ -70,7 +93,8 @@ public class NavigationDrawerFragment extends Fragment {
         // drawer. See PREF_USER_LEARNED_DRAWER for details.
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getActivity());
         mUserLearnedDrawer = sp.getBoolean(PREF_USER_LEARNED_DRAWER, false);
-
+        dbHelper = new ServerDbHelper(getActivity());
+        db = dbHelper.getReadableDatabase();
         if (savedInstanceState != null) {
             mCurrentSelectedPosition = savedInstanceState.getInt(STATE_SELECTED_POSITION);
             mFromSavedInstanceState = true;
@@ -81,8 +105,16 @@ public class NavigationDrawerFragment extends Fragment {
     }
 
     @Override
+    public void onDestroy() {
+        super.onDestroy();
+        db.close();
+        dbHelper = null;
+    }
+
+    @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        getLoaderManager().initLoader(SERVER_LOADER, null, this);
         // Indicate that this fragment would like to influence the set of actions in the action bar.
         setHasOptionsMenu(true);
     }
@@ -90,23 +122,71 @@ public class NavigationDrawerFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View rootView =  inflater.inflate(R.layout.fragment_navigation_drawer,null);
+
+        mServerAdapter = new ServerAdapter(getActivity(),null,0);
+
+        View rootView =  inflater.inflate(R.layout.fragment_navigation_drawer, null);
         mDrawerListView = (ListView) rootView.findViewById(R.id.navigation_drawer_list);
-        mDrawerListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        /*mDrawerListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 selectItem(position);
             }
+        });*/
+
+        mDrawerListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Cursor cursor = (Cursor) parent.getItemAtPosition(position);
+                String host = cursor.getString(cursor.getColumnIndex(FTPServerEntry.COLUMN_HOST));
+                String uName = cursor.getString(cursor.getColumnIndex(FTPServerEntry.COLUMN_USERNAME));
+                String password = cursor.getString(cursor.getColumnIndex(FTPServerEntry.COLUMN_PASSWORD));
+                String port = ""+cursor.getInt(cursor.getColumnIndex(FTPServerEntry.COLUMN_PORT));
+                selectItem(position,host,uName,password,port);
+            }
         });
-        mDrawerListView.setAdapter(new ArrayAdapter<String>(
-                getActionBar().getThemedContext(),
-                android.R.layout.simple_list_item_activated_1,
-                android.R.id.text1,
-                new String[]{
-                        getString(R.string.title_section1),
-                        getString(R.string.title_section2),
-                        getString(R.string.title_section3),
-                }));
+
+        mDrawerListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+
+                final Cursor cursor = (Cursor) parent.getItemAtPosition(position);
+                PopupMenu serverPopupMenu = new PopupMenu(getActionBar().getThemedContext(),view);
+                serverPopupMenu.inflate(R.menu.servers_popup);
+                serverPopupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                    @Override
+                    public boolean onMenuItemClick(MenuItem item) {
+                        if(item.getItemId() == R.id.action_delete_server){
+                            int sid = cursor.getInt(cursor.getColumnIndex(FTPServerEntry._ID));
+                            db.close();
+                            db = dbHelper.getWritableDatabase();
+                            db.delete(FTPServerEntry.TABLE_NAME,FTPServerEntry._ID+ " = ?",new String[]{""+sid});
+                            db.close();
+                            db = dbHelper.getReadableDatabase();
+                            getActivity().getContentResolver().notifyChange(Uri.parse("content://ftpservers"),null);
+                        }
+                        return true;
+                    }
+                });
+                serverPopupMenu.show();
+
+                return true;
+            }
+        });
+
+
+
+        mDrawerListView.setAdapter(mServerAdapter);
+
+        Button mAddServerButton = (Button) rootView.findViewById(R.id.button_add_server);
+        mAddServerButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent serverActivity = new Intent(getActivity(), ServerActivity.class);
+                serverActivity.setAction(Globals.ACTION_NEW_SERVER);
+                startActivity(serverActivity);
+            }
+        });
        // mDrawerListView.setItemChecked(mCurrentSelectedPosition, true);
         return rootView;
     }
@@ -188,7 +268,7 @@ public class NavigationDrawerFragment extends Fragment {
         mDrawerLayout.setDrawerListener(mDrawerToggle);
     }
 
-    private void selectItem(int position) {
+    private void selectItem(int position, String host, String uName, String password, String port) {
         mCurrentSelectedPosition = position;
         if (mDrawerListView != null) {
             mDrawerListView.setItemChecked(position, true);
@@ -197,7 +277,7 @@ public class NavigationDrawerFragment extends Fragment {
             mDrawerLayout.closeDrawer(mFragmentContainerView);
         }
         if (mCallbacks != null) {
-            mCallbacks.onNavigationDrawerItemSelected(position);
+            mCallbacks.onNavigationDrawerItemSelected(host, uName, password, port);
         }
     }
 
@@ -235,7 +315,7 @@ public class NavigationDrawerFragment extends Fragment {
         // If the drawer is open, show the global app actions in the action bar. See also
         // showGlobalContextActionBar, which controls the top-left area of the action bar.
         if (mDrawerLayout != null && isDrawerOpen()) {
-            inflater.inflate(R.menu.global, menu);
+           // inflater.inflate(R.menu.global, menu);
             showGlobalContextActionBar();
         }
         super.onCreateOptionsMenu(menu, inflater);
@@ -270,12 +350,57 @@ public class NavigationDrawerFragment extends Fragment {
     }
 
     /**
+     * Instantiate and return a new Loader for the given ID.
+     *
+     * @param id   The ID whose loader is to be created.
+     * @param args Any arguments supplied by the caller.
+     * @return Return a new Loader instance that is ready to start loading.
+     */
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        Uri u = Uri.parse("content://ftpservers");
+        return new CursorLoader(getActivity(), u, projection,null,null,null){
+            private final ForceLoadContentObserver mObserver = new ForceLoadContentObserver();
+
+            @Override
+            protected Cursor onLoadInBackground() {
+                Cursor c = db.query(false, FTPServerEntry.TABLE_NAME,projection,null,null,null,null,FTPServerEntry.COLUMN_NAME,null);
+                if(c != null){
+                    c.getCount();
+                    c.registerContentObserver(mObserver);
+                }
+                c.setNotificationUri(getContext().getContentResolver(),getUri());
+                return c;
+            }
+        };
+    }
+
+
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        mServerAdapter.swapCursor(data);
+    }
+
+    /**
+     * Called when a previously created loader is being reset, and thus
+     * making its data unavailable.  The application should at this point
+     * remove any references it has to the Loader's data.
+     *
+     * @param loader The Loader that is being reset.
+     */
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        mServerAdapter.swapCursor(null);
+    }
+
+    /**
      * Callbacks interface that all activities using this fragment must implement.
      */
     public static interface NavigationDrawerCallbacks {
         /**
          * Called when an item in the navigation drawer is selected.
          */
-        void onNavigationDrawerItemSelected(int position);
+        void onNavigationDrawerItemSelected(String host, String uName, String password, String port);
     }
 }

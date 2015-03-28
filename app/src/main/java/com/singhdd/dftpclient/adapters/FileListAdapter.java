@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.Date;
 
 
-public class LocalFileListAdapter extends BaseAdapter {
+public class FileListAdapter extends BaseAdapter {
     private Context context;
     private int layoutResourceId;
     private ArrayList<FileItem> files;
@@ -32,7 +32,7 @@ public class LocalFileListAdapter extends BaseAdapter {
      *                           instantiating views.
      * @param objects            The objects to represent in the ListView.
      */
-    public LocalFileListAdapter(Context context, int resource, ArrayList<FileItem> objects) {
+    public FileListAdapter(Context context, int resource, ArrayList<FileItem> objects) {
         this.context = context;
         this.layoutResourceId = resource;
         this.files = objects;
@@ -75,6 +75,9 @@ public class LocalFileListAdapter extends BaseAdapter {
 
                 if(data <= 1){
                     fDataTextView.setText(data+" Item");
+                }
+                else if(data == Long.MAX_VALUE) {
+                    fDataTextView.setText("Folder");
                 }
                 else {
                     fDataTextView.setText(data+" Items");
